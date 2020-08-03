@@ -12,7 +12,7 @@ public class jdbcDemo{
     static String PASSWORD = "";
 
     public static void setDataBase(String DRIVER, String URL, String USER, String PASSWORD) {
-        System.out.println("setDataBase");
+//        System.out.println("setDataBase");
         jdbcDemo.DRIVER = DRIVER;
         jdbcDemo.URL = URL;
         jdbcDemo.USER = USER;
@@ -69,6 +69,8 @@ public class jdbcDemo{
         String sql6 = "insert into orders (useid,skuid,orderid,o_date,o_area,o_sku_num) values ('80','33948','999999',str_to_date('2020-07-17','%Y-%m-%d'),1,1);";
         //删除orders中‘2020-07-17’的数据
         String sql7 = "delete from orders where o_date=str_to_date('2020-07-17','%Y-%m-%d');";
+
+        String sql8="select skuid from goods";
         List sql = new ArrayList();
         sql.add(sql1);
         sql.add(sql2);
@@ -80,29 +82,63 @@ public class jdbcDemo{
         hellw d = new hellw();
         String g= d.add("aa","bb");
 //        运行SQL
-        jdbcDemo jd = new jdbcDemo();
-        jd.setDataBase(DRIVER,URL,USER,PASSWORD);
-        Connection conn = getConnetion(DRIVER,URL,USER,PASSWORD);
-//        System.out.println(conn);
-        PreparedStatement pstt1 = conn.prepareStatement(sql1);
+        jdbcDemo jd1 = new jdbcDemo();
+        jd1.setDataBase(DRIVER,URL,USER,PASSWORD);
+        Connection conn1 = jd1.getConnetion(DRIVER,URL,USER,PASSWORD);
+        PreparedStatement pstt1 = conn1.prepareStatement(sql1);
         ResultSet rs1 = pstt1.executeQuery();
+        conn1.close();
 
-        PreparedStatement pstt2 = conn.prepareStatement(sql2);
+        jdbcDemo jd2 = new jdbcDemo();
+        jd2.setDataBase(DRIVER,URL,USER,PASSWORD);
+        Connection conn2 = jd2.getConnetion(DRIVER,URL,USER,PASSWORD);
+        PreparedStatement pstt2 = conn2.prepareStatement(sql2);
         ResultSet rs2 = pstt2.executeQuery();
+        conn2.close();
 
-        PreparedStatement pstt3 = conn.prepareStatement(sql3);
+        jdbcDemo jd3 = new jdbcDemo();
+        jd3.setDataBase(DRIVER,URL,USER,PASSWORD);
+        Connection conn3 = jd3.getConnetion(DRIVER,URL,USER,PASSWORD);
+        PreparedStatement pstt3 = conn3.prepareStatement(sql3);
         ResultSet rs3 = pstt3.executeQuery();
+        conn3.close();
 
-        PreparedStatement pstt4 = conn.prepareStatement(sql4);
+        jdbcDemo jd4 = new jdbcDemo();
+        jd4.setDataBase(DRIVER,URL,USER,PASSWORD);
+        Connection conn4 = jd4.getConnetion(DRIVER,URL,USER,PASSWORD);
+        PreparedStatement pstt4 = conn4.prepareStatement(sql4);
         ResultSet rs4 = pstt4.executeQuery();
+        conn4.close();
 
-        PreparedStatement pstt5 = conn.prepareStatement(sql5);
+        jdbcDemo jd5 = new jdbcDemo();
+        jd5.setDataBase(DRIVER,URL,USER,PASSWORD);
+        Connection conn5 = jd5.getConnetion(DRIVER,URL,USER,PASSWORD);
+        PreparedStatement pstt5 = conn5.prepareStatement(sql5);
         ResultSet rs5 = pstt5.executeQuery();
+        conn5.close();
 //        插入删除使用下列操作：
-        PreparedStatement pstt6 = conn.prepareStatement(sql6);
+        jdbcDemo jd6 = new jdbcDemo();
+        jd6.setDataBase(DRIVER,URL,USER,PASSWORD);
+        Connection conn6 = jd6.getConnetion(DRIVER,URL,USER,PASSWORD);
+        PreparedStatement pstt6 = conn6.prepareStatement(sql6);
         pstt6.executeUpdate();
-        PreparedStatement pstt7 = conn.prepareStatement(sql7);
+        conn6.close();
+
+        jdbcDemo jd7 = new jdbcDemo();
+        jd7.setDataBase(DRIVER,URL,USER,PASSWORD);
+        Connection conn7 = jd7.getConnetion(DRIVER,URL,USER,PASSWORD);
+        PreparedStatement pstt7 = conn7.prepareStatement(sql7);
         pstt7.executeUpdate();
+        conn7.close();
+
+        jdbcDemo jd8 = new jdbcDemo();
+        jd8.setDataBase(DRIVER,URL,USER,PASSWORD);
+        Connection conn8 = jd8.getConnetion(DRIVER,URL,USER,PASSWORD);
+        Statement sta = conn8.createStatement();
+        ResultSet rs = sta.executeQuery(sql8);
+        rs.close();
+        conn8.close();
+
         System.out.println("main()已结束。");
 
     }
