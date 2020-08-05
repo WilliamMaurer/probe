@@ -14,7 +14,8 @@ public class Test implements ClassFileTransformer {
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer)  {
 
         ClassPool pool = ClassPool.getDefault();
-//        String newName = className.replace("/",".");
+        String newName = className.replace("/",".");
+//        System.out.println(newName);
         /*
         * 1. preparedStatements通过java.sql.Connnection的(prepareCall|Statement)方法进行SQL传递,然后通过PreparedStatement.executeQuery()执行SQL语句；
         * 2. statement通过java.sql.Statement的execute($|Update|Query|Batch)方法传递SQL并执行SQL语句；
@@ -27,38 +28,7 @@ public class Test implements ClassFileTransformer {
             CtClass cl = pool.makeClass(new ByteArrayInputStream(classfileBuffer));
 //            System.out.println(cl.getName().equals("com.mysql.cj.jdbc.ClientPreparedStatement"));
 
-//            if(className.equals("java/sql/DriverManager")) {
-//
-//                CtMethod ct = cl.getDeclaredMethod("getConnection",
-//                        new CtClass[]{pool.get("java.lang.String"), pool.get("java.util.Properties"), pool.get("java.lang.Class")});
-//                ct.insertBefore("System.out.println($1);");
-//                ct.insertBefore("System.out.println($2);");
-//                ct.insertBefore("System.out.println($3);");
-//                ct.addLocalVariable("clazz", pool.get("java.lang.Class"));
-//                ct.addLocalVariable("info", pool.get("java.util.Properties"));
-//                ct.addLocalVariable("url", pool.get("java.lang.String"));
-//                ct.addLocalVariable("strings", pool.get("java.lang.String"));
-//                ct.insertBefore("url=$1;");
-//                ct.insertBefore("info=$2;");
-//                ct.insertBefore("clazz=$3;");
-//                ct.insertAfter("strings=url+\" \"+info.toString()+\" \"+clazz.toString();");
-//                ct.insertAfter("System.out.println(\"strings:\"+strings);");
-//                ct.addLocalVariable("id", pool.get("java.lang.String"));
-//                ct.insertAfter("id = org.example.ProcessId.getProcessId();");
-//                ct.insertAfter("id = \"\";");
-//                ct.addLocalVariable("start", CtClass.longType);
-//                ct.insertBefore("start = System.currentTimeMillis();");
-//                ct.addLocalVariable("cost", CtClass.longType);
-//                ct.insertAfter("cost = System.currentTimeMillis()-start;");
-//                ct.insertAfter("System.out.println(\"<------It is a PreparedStatement executeQuery. cost::------>\");");
-//                ct.insertAfter("System.out.println(\"processID:\"+id);");
-//                ct.insertAfter("System.out.println(\"cost:\"+cost);");
-//                ct.addLocalVariable("log_res", pool.get("java.lang.String"));
-//                ct.insertAfter("log_res = org.example.MonitorLog.writeLog(start,id,strings,cost);");
-////                    cl.writeFile();
-//                byte[] dmbytes = cl.toBytecode();
-//                return dmbytes;
-//            }
+
 
             if (( Arrays.toString(cl.getInterfaces()).contains("java.sql.Statement")||Arrays.toString(cl.getInterfaces()).contains("java.sql.Connection")
                     ||Arrays.toString(cl.getInterfaces()).contains("java.sql.PrepareStatement"))&& !cl.isInterface()){
@@ -149,6 +119,38 @@ public class Test implements ClassFileTransformer {
                 byte[] ddbytes =cl.toBytecode();
                 return ddbytes;
             }
+//            else if(className.equals("java/sql/DriverManager")) {
+//
+//                CtMethod ct = cl.getDeclaredMethod("getConnection",
+//                        new CtClass[]{pool.get("java.lang.String"), pool.get("java.util.Properties"), pool.get("java.lang.Class")});
+//                ct.insertBefore("System.out.println($1);");
+//                ct.insertBefore("System.out.println($2);");
+//                ct.insertBefore("System.out.println($3);");
+//                ct.addLocalVariable("clazz", pool.get("java.lang.Class"));
+//                ct.addLocalVariable("info", pool.get("java.util.Properties"));
+//                ct.addLocalVariable("url", pool.get("java.lang.String"));
+//                ct.addLocalVariable("strings", pool.get("java.lang.String"));
+//                ct.addLocalVariable("log_res", pool.get("java.lang.String"));
+//                ct.addLocalVariable("cost", CtClass.longType);
+//                ct.addLocalVariable("start", CtClass.longType);
+//                ct.insertBefore("start = System.currentTimeMillis();");
+//                ct.insertBefore("url=$1;");
+//                ct.insertBefore("info=$2;");
+//                ct.insertBefore("clazz=$3;");
+//                ct.insertAfter("strings=url+\" \"+info.toString()+\" \"+clazz.toString();");
+//                ct.insertAfter("System.out.println(\"strings:\"+strings);");
+//                ct.addLocalVariable("id", pool.get("java.lang.String"));
+//                ct.insertAfter("id = org.example.ProcessId.getProcessId();");
+////                ct.insertAfter("id = \"\";");
+//                ct.insertAfter("cost = System.currentTimeMillis()-start;");
+//                ct.insertAfter("System.out.println(\"<------It is a Driver Manager:------>\");");
+//                ct.insertAfter("System.out.println(\"processID:\"+id);");
+//                ct.insertAfter("System.out.println(\"cost:\"+cost);");
+//                ct.insertAfter("log_res = org.example.MonitorLog.writeLog(start,id,strings,cost);");
+////                    cl.writeFile();
+//                byte[] dmbytes = cl.toBytecode();
+//                return dmbytes;
+//            }
 
         } catch (NotFoundException | IOException | CannotCompileException e) {
             e.printStackTrace();

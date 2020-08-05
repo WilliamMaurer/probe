@@ -43,7 +43,7 @@ public class jdbcDemo{
             Class.forName(DRIVER);
             connection = DriverManager.getConnection(URL,USER,PASSWORD);
 
-        } catch (ClassNotFoundException | SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
             System.out.println("数据库链接失败！");
         }
