@@ -106,7 +106,7 @@ public class MonitorLog {
         JSONObject jsonObject = new JSONObject();
         JSONObject in_jsonObject = new JSONObject();
         jsonObject.put("topic","test");
-        String[] key = {"timestamp_sql","processID","sql_Content","cost_Time"};
+        String[] key = {"timestamp_sql","processID","sql_Content","cost_Time","applicationName","moduleName","processName","instanceNumber"};
         for(int index =0; index<key.length;index++){
             in_jsonObject.put(key[index],str[index]);
         }
@@ -199,12 +199,17 @@ public class MonitorLog {
     * 测试使用
     * */
     public static String tests(){
-
+        System.out.println("look here----------------:"+jdbcPremain.getAgentargs());
+        String[] agentargs = jdbcPremain.getAgentargs().split("&");
+        for(String s:agentargs){
+            System.out.println(s);
+        }
         String startTime = Long.toString(start);
         String costTime = Long.toString(cost);
 
         String message = startTime+","+processID+","+sql+","+costTime;
         String res = "";
+        if(agentargs[4].equals("1")){
         FileWriter fw = null;
         PrintWriter pw = null;
         File f = new File(logPath);
@@ -230,8 +235,11 @@ public class MonitorLog {
             }
 
         }
+        }else {
+            System.out.println("日志关闭");
+        }
         //传递给 Kafka，通过Post请求
-        String[] str ={String.valueOf(start),processID,sql,String.valueOf(cost)};
+        String[] str ={String.valueOf(start),processID,sql,String.valueOf(cost),agentargs[0],agentargs[1],agentargs[2],agentargs[3]};
         System.out.println(str);
         JSONObject jsonObject = strTojson(str);
         postToKafa(url,jsonObject);
@@ -274,5 +282,21 @@ public class MonitorLog {
 //    public static void sendLog(Long startTime,String processID,String sql,Long costTime,String filePath){
 //
 //    }
+
+    // for split string，拆分张磊磊传入的长字符串
+    //jdbc:mysql://localhost:3306/test?useSSL=false&serverTimezone=UTC {user=root, password=123456} class src.agent.testdemo
+    public static String[] splitString(String tar){
+        String[] res = tar.split("\\s+|:|/|\\?|=|,");
+        return res;
+    }
+    public static void main(String[] args){
+//        String tar = "jdbc:mysql://localhost:3306/test?useSSL=false&serverTimezone=UTC {user=root, password=123456} class src.agent.testdemo";
+//        String[] res = splitString(tar);
+//        for(int i=0; i<res.length;i++){
+//            System.out.println(i+": "+res[i]);
+//        }
+         System.out.println(jdbcPremain.getAgentargs());
+
+    }
 
 }
