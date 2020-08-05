@@ -14,6 +14,52 @@ public class MonitorLog {
 
     public static final String url = "http://113.106.111.75:5040/demo/kafka/produce";
 
+    public static long start;
+    public static long cost;
+    public static String sql = "";
+    public static String processID = "";
+    public static String logPath="Log.txt";
+
+    public static String getProcessID() {
+        return processID;
+    }
+
+    public static void setProcessID(String processID) {
+        MonitorLog.processID = processID;
+    }
+
+    public static String getSql() {
+        return sql;
+    }
+
+    public static void setSql(String sql) {
+        MonitorLog.sql = sql;
+    }
+
+    public static long getCost() {
+        return cost;
+    }
+
+    public static void setCost(long cost) {
+        MonitorLog.cost = cost;
+    }
+
+    public static long getStart() {
+        return start;
+    }
+
+    public static void setStart(long start) {
+        MonitorLog.start = start;
+    }
+
+    public static String getLogPath() {
+        return logPath;
+    }
+
+    public static void setLogPath(String logPath) {
+        MonitorLog.logPath = logPath;
+    }
+
     /*
      * 输出Log至Log.txt中
      * */
@@ -47,10 +93,10 @@ public class MonitorLog {
             }
         }
         //传递给 Kafka，通过Post请求
-//        String[] str ={String.valueOf(startTime),processID,sql,String.valueOf(costTime)};
-//        System.out.println(str);
-//        JSONObject jsonObject = strTojson(str);
-//        postToKafa(url,jsonObject);
+        String[] str ={String.valueOf(startTime),processID,sql,String.valueOf(costTime)};
+        System.out.println(str);
+        JSONObject jsonObject = strTojson(str);
+        postToKafa(url,jsonObject);
 
         return res;
     }
@@ -152,41 +198,45 @@ public class MonitorLog {
     /*
     * 测试使用
     * */
-//    public static String tests(Long startTime,Long costTime,String filePath){
-////        setSql(sql);
-////        setCostTime(costTime);
-////        setFilePath(filePath);
-////        setStartTime(startTime);
-////        setProcessID(processID);
-//        String message = Long.toString(startTime)+Long.toString(costTime);
-//        String res = "";
-//        FileWriter fw = null;
-//        PrintWriter pw = null;
-//        File f = new File(filePath);
-//        try {
-//            fw = new FileWriter(f,true);
-//            pw = new PrintWriter(fw);
-//            pw.println(message);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            System.out.println("写入txt文件出现异常！");
-//        }finally {
-//
-//            try {
-//                pw.flush();
-//                fw.flush();
-//                pw.close();
-//                fw.close();
-//                res = "log out successed";
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//                System.out.println("在刷新/关闭txt文件出现异常！");
-//                res = "log out failed";
-//            }
-//
-//        }
-//        return res;
-//    }
+    public static String tests(){
+
+        String startTime = Long.toString(start);
+        String costTime = Long.toString(cost);
+
+        String message = startTime+","+processID+","+sql+","+costTime;
+        String res = "";
+        FileWriter fw = null;
+        PrintWriter pw = null;
+        File f = new File(logPath);
+        try {
+            fw = new FileWriter(f,true);
+            pw = new PrintWriter(fw);
+            pw.println(message);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("写入txt文件出现异常！");
+        }finally {
+
+            try {
+                pw.flush();
+                fw.flush();
+                pw.close();
+                fw.close();
+                res = "log out successed";
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("在刷新/关闭txt文件出现异常！");
+                res = "log out failed";
+            }
+
+        }
+        //传递给 Kafka，通过Post请求
+        String[] str ={String.valueOf(start),processID,sql,String.valueOf(cost)};
+        System.out.println(str);
+        JSONObject jsonObject = strTojson(str);
+        postToKafa(url,jsonObject);
+        return res;
+    }
 //    public static void info3(String URL,String filePath){
 ////        setSql(sql);
 ////        setCostTime(costTime);

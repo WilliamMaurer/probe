@@ -19,14 +19,53 @@ public class Test implements ClassFileTransformer {
         * 1. preparedStatements通过java.sql.Connnection的(prepareCall|Statement)方法进行SQL传递,然后通过PreparedStatement.executeQuery()执行SQL语句；
         * 2. statement通过java.sql.Statement的execute($|Update|Query|Batch)方法传递SQL并执行SQL语句；
         * 3. mysql-connector 驱动是通过类名：com.mysql.cj.jdbc.StatementImpl和类名：com.mysql.cj.jdbc.ConnectionImpl实现的,是通过Statement实现的
+        *
         * */
+
+
         try {
             CtClass cl = pool.makeClass(new ByteArrayInputStream(classfileBuffer));
+//            System.out.println(cl.getName().equals("com.mysql.cj.jdbc.ClientPreparedStatement"));
 
-            if ((Arrays.toString(cl.getInterfaces()).equals("java.sql.PreparedStatement") || Arrays.toString(cl.getInterfaces()).contains("java.sql.Statement")
-                    || Arrays.toString(cl.getInterfaces()).contains("java.sql.Connection") )&& !cl.isInterface()){
+//            if(className.equals("java/sql/DriverManager")) {
+//
+//                CtMethod ct = cl.getDeclaredMethod("getConnection",
+//                        new CtClass[]{pool.get("java.lang.String"), pool.get("java.util.Properties"), pool.get("java.lang.Class")});
+//                ct.insertBefore("System.out.println($1);");
+//                ct.insertBefore("System.out.println($2);");
+//                ct.insertBefore("System.out.println($3);");
+//                ct.addLocalVariable("clazz", pool.get("java.lang.Class"));
+//                ct.addLocalVariable("info", pool.get("java.util.Properties"));
+//                ct.addLocalVariable("url", pool.get("java.lang.String"));
+//                ct.addLocalVariable("strings", pool.get("java.lang.String"));
+//                ct.insertBefore("url=$1;");
+//                ct.insertBefore("info=$2;");
+//                ct.insertBefore("clazz=$3;");
+//                ct.insertAfter("strings=url+\" \"+info.toString()+\" \"+clazz.toString();");
+//                ct.insertAfter("System.out.println(\"strings:\"+strings);");
+//                ct.addLocalVariable("id", pool.get("java.lang.String"));
+//                ct.insertAfter("id = org.example.ProcessId.getProcessId();");
+//                ct.insertAfter("id = \"\";");
+//                ct.addLocalVariable("start", CtClass.longType);
+//                ct.insertBefore("start = System.currentTimeMillis();");
+//                ct.addLocalVariable("cost", CtClass.longType);
+//                ct.insertAfter("cost = System.currentTimeMillis()-start;");
+//                ct.insertAfter("System.out.println(\"<------It is a PreparedStatement executeQuery. cost::------>\");");
+//                ct.insertAfter("System.out.println(\"processID:\"+id);");
+//                ct.insertAfter("System.out.println(\"cost:\"+cost);");
+//                ct.addLocalVariable("log_res", pool.get("java.lang.String"));
+//                ct.insertAfter("log_res = org.example.MonitorLog.writeLog(start,id,strings,cost);");
+////                    cl.writeFile();
+//                byte[] dmbytes = cl.toBytecode();
+//                return dmbytes;
+//            }
 
-//                mysql-connector执行SQL主要通过com.mysql.cj.jdbc.ConnectionImpl和com.mysql.cj.jdbc.StatementImpl实现
+            if (( Arrays.toString(cl.getInterfaces()).contains("java.sql.Statement")||Arrays.toString(cl.getInterfaces()).contains("java.sql.Connection")
+                    ||Arrays.toString(cl.getInterfaces()).contains("java.sql.PrepareStatement"))&& !cl.isInterface()){
+                /*
+                * mysql-connector执行SQL主要通过com.mysql.cj.jdbc.ConnectionImpl和com.mysql.cj.jdbc.StatementImpl实现
+                * mysql-connector在执行Statement对象的
+                * */
                 CtMethod[] ctMethods = cl.getDeclaredMethods();
                 String clazzName = cl.getName();
 //                判断是通过那个方法执行SQL的
@@ -34,21 +73,87 @@ public class Test implements ClassFileTransformer {
 //                System.out.println(curStatement);
                 if (curStatement.equals("PreparedStatement")){
 //                    通过PreparedStatement方式执行SQL的
-                    CtClass  pclazz= captureSqlFromPreparedStatement(pool,cl);
-                    byte[] pbytes =pclazz.toBytecode();
-                    return pbytes;
+                    captureSqlFromPreparedStatement(pool,cl);
+//                    CtClass esqlclazz = SqlExecuteTime(pool,cl);
+//                    byte[] epbytes = esqlclazz.toBytecode();
+
                 }else if(curStatement.equals("Statement")){
 //                    通过Statement方式执行SQL的
-                    CtClass  sclazz= captureSqlFromStatement(pool,cl);
-                    byte[] sbytes =sclazz.toBytecode();
-                    return sbytes;
+                    captureSqlFromStatement(pool,cl);
+                    byte[] ddbytes =cl.toBytecode();
+                    return ddbytes;
+
                 }else {
                     System.out.println("不能判断是通过PreparedStatement对象还是Statement对象实现SQL语句的。");
                 }
+            } else if(className.equals("com/mysql/cj/jdbc/ClientPreparedStatement")) {
+                CtMethod ad = cl.getDeclaredMethod("getInstance");
+                ad.addLocalVariable("sql", pool.get("java.lang.String"));
+                ad.insertBefore("sql = $2;");
+                ad.insertAfter("org.example.MonitorLog.setSql(sql);");
+                ad.insertAfter("System.out.println(\"<------A PreparedStatement object. This step is for SQL. Achieved by com/mysql/cj/jdbc/ClientPreparedStatement.------>\");");
+                ad.insertAfter("System.out.println(\"sql:\"+sql);");
+
+                CtMethod ct = cl.getDeclaredMethod("executeQuery");
+                ct.addLocalVariable("id", pool.get("java.lang.String"));
+                ct.insertBefore("id = org.example.ProcessId.getProcessId();");
+
+                ct.addLocalVariable("start", CtClass.longType);
+                ct.insertBefore("start = System.currentTimeMillis();");
+
+                ct.addLocalVariable("cost", CtClass.longType);
+                ct.insertAfter("cost = System.currentTimeMillis()-start;");
+
+                ct.insertAfter("System.out.println(\"<------A PreparedStatement executeQuery(). Achieved by com/mysql/cj/jdbc/ClientPreparedStatement.------>\");");
+                ct.insertAfter("System.out.println(\"start:\"+start);");
+                ct.insertAfter("System.out.println(\"processID:\"+id);");
+                ct.insertAfter("System.out.println(\"cost:\"+cost);");
+
+                ct.insertAfter("org.example.MonitorLog.setStart(start);");
+                ct.insertAfter("org.example.MonitorLog.setCost(cost);");
+                ct.insertAfter("org.example.MonitorLog.setProcessID(id);");
+
+                ct.addLocalVariable("log_res", pool.get("java.lang.String"));
+//                ct.insertAfter("log_res = org.example.MonitorLog.writeLog(o_start,o_processID,o_sql,o_cost);");
+
+
+                ct.insertAfter("log_res = org.example.MonitorLog.tests();");
+
+                //增删操作：
+                CtMethod inserDelete = cl.getDeclaredMethod("executeUpdate");
+                inserDelete.addLocalVariable("id", pool.get("java.lang.String"));
+                inserDelete.insertBefore("id = org.example.ProcessId.getProcessId();");
+
+                inserDelete.addLocalVariable("start", CtClass.longType);
+                inserDelete.insertBefore("start = System.currentTimeMillis();");
+
+
+                inserDelete.addLocalVariable("cost", CtClass.longType);
+                inserDelete.insertAfter("cost = System.currentTimeMillis()-start;");
+
+                inserDelete.insertAfter("System.out.println(\"<------A PreparedStatement executeUpdate(). Achieved by com/mysql/cj/jdbc/ClientPreparedStatement.------>\");");
+                inserDelete.insertAfter("System.out.println(\"start:\"+start);");
+                inserDelete.insertAfter("System.out.println(\"processID:\"+id);");
+                inserDelete.insertAfter("System.out.println(\"cost:\"+cost);");
+
+                inserDelete.insertAfter("org.example.MonitorLog.setStart(start);");
+                inserDelete.insertAfter("org.example.MonitorLog.setCost(cost);");
+                inserDelete.insertAfter("org.example.MonitorLog.setProcessID(id);");
+
+                inserDelete.addLocalVariable("log_res", pool.get("java.lang.String"));
+//                ct.insertAfter("log_res = org.example.MonitorLog.writeLog(o_start,o_processID,o_sql,o_cost);");
+
+
+                inserDelete.insertAfter("log_res = org.example.MonitorLog.tests();");
+
+                byte[] ddbytes =cl.toBytecode();
+                return ddbytes;
             }
+
         } catch (NotFoundException | IOException | CannotCompileException e) {
             e.printStackTrace();
         }
+
 
 //        测试示例
 //        if(newName.equals("org.example.hellw")){
@@ -68,9 +173,11 @@ public class Test implements ClassFileTransformer {
     /*
     * 如果 SQL语句 是通过 PrepareStatement实例化对象，需要通过 connection.prepareStatement（）或 connection.prepareCall() 获取SQL参数
     * */
-    public static CtClass captureSqlFromPreparedStatement(ClassPool pool, CtClass clazz) throws NotFoundException, CannotCompileException {
-//        System.out.println("这是个PreparedStatement对象。");
-        captureSqlFromPreparCall(pool,clazz);
+    public static void captureSqlFromPreparedStatement(ClassPool pool, CtClass clazz) throws NotFoundException, CannotCompileException {
+
+
+
+//        captureSqlFromPreparCall(pool,clazz);
         CtMethod pm = clazz.getDeclaredMethod("prepareStatement",new CtClass[]{pool.get("java.lang.String")});
 //        获取SQL语句
         pm.addLocalVariable("sql",pool.get("java.lang.String"));
@@ -83,22 +190,28 @@ public class Test implements ClassFileTransformer {
 //        获取SQL执行的开始时间
         pm.addLocalVariable("start",CtClass.longType);
         pm.insertBefore("start = System.currentTimeMillis();");
+
 //        获取SQL的运行时间
         pm.addLocalVariable("cost",CtClass.longType);
         pm.insertAfter("cost = System.currentTimeMillis()-start;");
 
-        pm.insertAfter("System.out.println(\"<------It is a PreparedStatement Object. This is prepareStatement() for SQL:------>\");");
+        pm.insertAfter("System.out.println(\"<------A PreparedStatement Object. This is prepareStatement() for SQL:------>\");");
         pm.insertAfter("System.out.println(\"start:\"+start);");
         pm.insertAfter("System.out.println(\"processID:\"+id);");
         pm.insertAfter("System.out.println(\"sql:\"+sql);");
         pm.insertAfter("System.out.println(\"cost:\"+cost);");
+        pm.insertAfter("org.example.MonitorLog.setSql(sql);");
+        pm.insertAfter("org.example.MonitorLog.setProcessID(id);");
+
 
 //        SqlExecuteTime(pool,clazz);
+
 //        输出至日志文档
         pm.addLocalVariable("log_res",pool.get("java.lang.String"));
+//        pm.insertAfter("log_res = org.example.MonitorLog.tests();");
         pm.insertAfter("log_res = org.example.MonitorLog.writeLog(start,id,sql,cost);");
 
-        return clazz;
+//        return clazz;
     }
     public static CtClass captureSqlFromPreparCall(ClassPool pool, CtClass clazz) throws NotFoundException, CannotCompileException {
 //        System.out.println("这是个PreparedStatement对象。");
@@ -107,9 +220,11 @@ public class Test implements ClassFileTransformer {
         pm.addLocalVariable("sql",pool.get("java.lang.String"));
         pm.insertBefore("sql = $1;");
 
+
 //        获取进程ID
         pm.addLocalVariable("id",pool.get("java.lang.String"));
         pm.insertBefore("id = org.example.ProcessId.getProcessId();");
+        pm.insertBefore("org.example.MonitorLog.setProcessID(id);");
 
 //        获取SQL执行的开始时间
         pm.addLocalVariable("start",CtClass.longType);
@@ -118,11 +233,12 @@ public class Test implements ClassFileTransformer {
         pm.addLocalVariable("cost",CtClass.longType);
         pm.insertAfter("cost = System.currentTimeMillis()-start;");
 
-        pm.insertAfter("System.out.println(\"<------It is a PreparedStatement Object. This is prepareCall() for SQL:------>\");");
+        pm.insertAfter("System.out.println(\"<------A PreparedStatement Object. This is prepareCall() for SQL:------>\");");
         pm.insertAfter("System.out.println(\"start:\"+start);");
         pm.insertAfter("System.out.println(\"processID:\"+id);");
         pm.insertAfter("System.out.println(\"sql:\"+sql);");
         pm.insertAfter("System.out.println(\"cost:\"+cost);");
+        pm.insertAfter("org.example.MonitorLog.setSql(sql);");
 
 //        SqlExecuteTime(pool,clazz);
 //        输出至日志文档
@@ -136,52 +252,57 @@ public class Test implements ClassFileTransformer {
     /*
     * 如果 SQL语句是通过Statement实例化对象执行的，需要通过statement.executeQuery()获取SQL参数
     * */
-    public static CtClass captureSqlFromStatement(ClassPool pool,CtClass clazz) throws NotFoundException, CannotCompileException {
+    public static void captureSqlFromStatement(ClassPool pool,CtClass clazz) throws NotFoundException, CannotCompileException {
 //        System.out.println("这是个Statement对象。");
         CtMethod em = clazz.getDeclaredMethod("executeQuery",new CtClass[]{pool.get("java.lang.String")});
 //        获取SQL语句
         em.addLocalVariable("sql",pool.get("java.lang.String"));
         em.insertBefore("sql = $1;");
 
+
 //        获取进程ID
         em.addLocalVariable("id",pool.get("java.lang.String"));
         em.insertBefore("id = org.example.ProcessId.getProcessId();");
 
+
 //        获取SQL执行的开始时间
         em.addLocalVariable("start",CtClass.longType);
         em.insertBefore("start = System.currentTimeMillis();");
+
 
 //        获取SQL的运行时间
         em.addLocalVariable("cost",CtClass.longType);
         em.insertAfter("cost = System.currentTimeMillis()-start;");
 
 
-        em.insertAfter("System.out.println(\"<------It is a Statement Object. This is execute() for SQL:------>\");");
+        em.insertAfter("System.out.println(\"<------A Statement Object. This is execute() for SQL. Achieved by com/mysql/cj/jdbc/StatementImpl:------>\");");
         em.insertAfter("System.out.println(\"start:\"+start);");
         em.insertAfter("System.out.println(\"processID:\"+id);");
         em.insertAfter("System.out.println(\"sql:\"+sql);");
         em.insertAfter("System.out.println(\"cost:\"+cost);");
 
-//        SqlExecuteTime(pool,clazz);
 //        输出至日志文档
-        em.addLocalVariable("log_res",pool.get("java.lang.String"));
-        em.insertAfter("log_res = org.example.MonitorLog.writeLog(start,id,sql,cost);");
+        em.insertAfter("org.example.MonitorLog.setSql(sql);");
+        em.insertAfter("org.example.MonitorLog.setCost(cost);");
+        em.insertAfter("org.example.MonitorLog.setStart(start);");
+        em.insertAfter("org.example.MonitorLog.setProcessID(id);");
 
-        return clazz;
+        em.addLocalVariable("log_res",pool.get("java.lang.String"));
+//        em.insertAfter("log_res = org.example.MonitorLog.writeLog(start,id,sql,cost);");
+
+        em.insertAfter("log_res = org.example.MonitorLog.tests();");
+//        return clazz;
     }
     public static void SqlExecuteTime(ClassPool pool,CtClass clazz) throws NotFoundException, CannotCompileException {
 
-
-//        sqlExecute(pool, clazz);
-//        sqlExecuteUpdate(pool, clazz);
-//        sqlExecuteBatch(pool,clazz);
-        CtMethod closeStatementm = clazz.getDeclaredMethod("isClosed");
+        CtMethod closeStatementm = clazz.getDeclaredMethod("com.mysql.cj.jdbc.ClientPreparedStatement.executeQuery");
 //        获取SQL的运行时间
         closeStatementm.addLocalVariable("end",CtClass.longType);
         closeStatementm.insertBefore("end = System.currentTimeMillis();");
         closeStatementm.insertBefore("System.out.println(\"<------This is execute() for end:------>\");");
         closeStatementm.insertBefore("System.out.println(\"end:\"+end);");
 
+//        return cpsclazz;
     }
 //    public static void sqlExecute(ClassPool pool,CtClass clazz) throws NotFoundException, CannotCompileException {
 //

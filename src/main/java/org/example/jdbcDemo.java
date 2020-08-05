@@ -87,6 +87,7 @@ public class jdbcDemo{
         Connection conn1 = jd1.getConnetion(DRIVER,URL,USER,PASSWORD);
         PreparedStatement pstt1 = conn1.prepareStatement(sql1);
         ResultSet rs1 = pstt1.executeQuery();
+        rs1.close();
         conn1.close();
 
         jdbcDemo jd2 = new jdbcDemo();
@@ -94,6 +95,7 @@ public class jdbcDemo{
         Connection conn2 = jd2.getConnetion(DRIVER,URL,USER,PASSWORD);
         PreparedStatement pstt2 = conn2.prepareStatement(sql2);
         ResultSet rs2 = pstt2.executeQuery();
+        rs2.close();
         conn2.close();
 
         jdbcDemo jd3 = new jdbcDemo();
@@ -101,6 +103,7 @@ public class jdbcDemo{
         Connection conn3 = jd3.getConnetion(DRIVER,URL,USER,PASSWORD);
         PreparedStatement pstt3 = conn3.prepareStatement(sql3);
         ResultSet rs3 = pstt3.executeQuery();
+        rs3.close();
         conn3.close();
 
         jdbcDemo jd4 = new jdbcDemo();
@@ -108,6 +111,7 @@ public class jdbcDemo{
         Connection conn4 = jd4.getConnetion(DRIVER,URL,USER,PASSWORD);
         PreparedStatement pstt4 = conn4.prepareStatement(sql4);
         ResultSet rs4 = pstt4.executeQuery();
+        rs4.close();
         conn4.close();
 
         jdbcDemo jd5 = new jdbcDemo();
@@ -115,6 +119,7 @@ public class jdbcDemo{
         Connection conn5 = jd5.getConnetion(DRIVER,URL,USER,PASSWORD);
         PreparedStatement pstt5 = conn5.prepareStatement(sql5);
         ResultSet rs5 = pstt5.executeQuery();
+        rs5.close();
         conn5.close();
 //        插入删除使用下列操作：
         jdbcDemo jd6 = new jdbcDemo();
@@ -122,6 +127,7 @@ public class jdbcDemo{
         Connection conn6 = jd6.getConnetion(DRIVER,URL,USER,PASSWORD);
         PreparedStatement pstt6 = conn6.prepareStatement(sql6);
         pstt6.executeUpdate();
+        pstt6.close();
         conn6.close();
 
         jdbcDemo jd7 = new jdbcDemo();
@@ -129,6 +135,7 @@ public class jdbcDemo{
         Connection conn7 = jd7.getConnetion(DRIVER,URL,USER,PASSWORD);
         PreparedStatement pstt7 = conn7.prepareStatement(sql7);
         pstt7.executeUpdate();
+        pstt7.close();
         conn7.close();
 
         jdbcDemo jd8 = new jdbcDemo();
