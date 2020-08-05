@@ -54,7 +54,7 @@ public class jdbcDemo{
         String DRIVER = "com.mysql.cj.jdbc.Driver";
         String URL = "jdbc:mysql://localhost:3306/icbc?useSSL=false&serverTimezone=UTC&characterEncoding=utf-8&allowPublicKeyRetrieval=true";
         String USER = "root";
-        String PASSWORD = "Sr617917";
+        String PASSWORD = "123456";
         //查询1——查询价格在100~200的skuid
         String sql1 = "select skuid from goods where price>= 100 and price<=200;";
         //查询2——价格大于500且cate=71的所有商品
