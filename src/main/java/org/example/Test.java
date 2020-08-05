@@ -10,6 +10,7 @@ import java.util.Arrays;
 
 public class Test implements ClassFileTransformer {
 
+
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer)  {
 
@@ -21,6 +22,7 @@ public class Test implements ClassFileTransformer {
         * 3. mysql-connector 驱动是通过类名：com.mysql.cj.jdbc.StatementImpl和类名：com.mysql.cj.jdbc.ConnectionImpl实现的,是通过Statement实现的
         *
         * */
+
 
 
         try {
@@ -149,6 +151,10 @@ public class Test implements ClassFileTransformer {
                 byte[] ddbytes =cl.toBytecode();
                 return ddbytes;
             }
+            else if(className.equals("java/sql/DriverManager")) {
+                byte[] dmbytes = JudgeDriver(pool,cl).toBytecode();
+                return dmbytes;
+            }
 
         } catch (NotFoundException | IOException | CannotCompileException e) {
             e.printStackTrace();
@@ -169,6 +175,71 @@ public class Test implements ClassFileTransformer {
 //            }
 //        }
         return classfileBuffer;
+    }
+/*
+* 获取DriverManager参数
+* */
+    public static CtClass JudgeDriver(ClassPool pool,CtClass ctClass) throws CannotCompileException, NotFoundException {
+        String sss=("public static String writeLog(long startTime,java.lang.String processID,java.lang.String sql,long costTime)" +
+                "{\n"+
+                "        java.lang.String filePath = \"Log.txt\";\n"+
+                "        java.lang.String message = java.lang.Long.toString(startTime)+\",\"+processID+\",\"+sql+\",\"+java.lang.Long.toString(costTime);" +
+                "        java.lang.String res = \"\";\n" +
+                "        java.io.FileWriter fw = null;\n" +
+                "        java.io.PrintWriter pw = null;\n" +
+                "        java.io.File f = new java.io.File(filePath);\n" +
+                "        try {\n" +
+                "            fw = new java.io.FileWriter(f,true);\n" +
+                "            pw = new java.io.PrintWriter(fw);\n" +
+                "            pw.println(message);\n" +
+                "        } catch (java.io.IOException e) {\n" +
+                "            e.printStackTrace();\n" +
+                "            System.out.println(\"写入txt文件出现异常！\");\n" +
+                "        }finally {\n" +
+                "            try {\n" +
+                "                pw.flush();\n" +
+                "                fw.flush();\n" +
+                "                pw.close();\n" +
+                "                fw.close();\n" +
+                "                res = \"log out successed\";\n" +
+                "            } catch (java.io.IOException e) {\n" +
+                "                e.printStackTrace();\n" +
+                "                System.out.println(\"在刷新/关闭txt文件出现异常！\");\n" +
+                "                res = \"log out failed\";\n" +
+                "            }\n" +
+                "        }\n" +
+                "        return res;\n" +
+                "    }");
+        CtMethod ct = ctClass.getDeclaredMethod("getConnection",
+                new CtClass[]{pool.get("java.lang.String"),pool.get("java.util.Properties"),pool.get("java.lang.Class")});
+        ct.addLocalVariable("clazz",pool.get("java.lang.String"));
+        ct.addLocalVariable("info",pool.get("java.util.Properties"));
+        ct.addLocalVariable("url",pool.get("java.lang.String"));
+        ct.addLocalVariable("strings",pool.get("java.lang.String"));
+        ct.insertBefore("url=$1;");
+        ct.insertBefore("info=$2;");
+        ct.insertBefore("clazz=$3;");
+        ct.insertAfter("strings=url+\" \"+info.toString()+\" \"+$3.toString();");
+        ct.addLocalVariable("id",pool.get("java.lang.String"));
+        ct.addLocalVariable("start",CtClass.longType);
+
+        ctClass.addMethod(CtMethod.make("public static String getProcessId()" +
+                "{java.lang.management.RuntimeMXBean runtimeMXBean " +
+                "= java.lang.management.ManagementFactory.getRuntimeMXBean(); " +
+                "return (runtimeMXBean.getName().split(\"@\")[0]);}", ctClass));
+
+        ctClass.addMethod(CtMethod.make(sss, ctClass));
+        ct.insertAfter("id = getProcessId();");
+        ct.insertBefore("start = System.currentTimeMillis();");
+        ct.addLocalVariable("cost",CtClass.longType);
+        ct.insertAfter("cost = System.currentTimeMillis()-start;");
+        ct.insertAfter("System.out.println(\"<------It is a DriverManager:------>\");");
+        ct.insertAfter("System.out.println(\"processID:\"+id);");
+        ct.insertAfter("System.out.println(\"cost:\"+cost);");
+        ct.addLocalVariable("log_res",pool.get("java.lang.String"));
+        ct.insertAfter("log_res = writeLog(start,id,strings,cost);");
+
+        return ctClass;
     }
     /*
     * 如果 SQL语句 是通过 PrepareStatement实例化对象，需要通过 connection.prepareStatement（）或 connection.prepareCall() 获取SQL参数
