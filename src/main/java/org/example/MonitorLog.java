@@ -65,40 +65,47 @@ public class MonitorLog {
      * */
     public static String writeLog(long startTime,String processID,String sql,long costTime){
 //    public static String writeLog(){
+        String[] agentargs = jdbcPremain.getAgentargs().split("&");
         String filePath = "Log.txt";
         String message = Long.toString(startTime)+","+processID+","+sql+","+Long.toString(costTime);
 
         String res = "";
-        FileWriter fw = null;
-        PrintWriter pw = null;
-        File f = new File(filePath);
-        try {
-            fw = new FileWriter(f,true);
-            pw = new PrintWriter(fw);
-            pw.println(message);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.out.println("写入txt文件出现异常！");
-        }finally {
+        if(agentargs[4].equals("1")){
+            FileWriter fw = null;
+            PrintWriter pw = null;
+            File f = new File(logPath);
             try {
-                pw.flush();
-                fw.flush();
-                pw.close();
-                fw.close();
-                res = "log out successed";
+                fw = new FileWriter(f,true);
+                pw = new PrintWriter(fw);
+                pw.println(message);
             } catch (IOException e) {
                 e.printStackTrace();
-                System.out.println("在刷新/关闭txt文件出现异常！");
-                res = "log out failed";
+                System.out.println("写入txt文件出现异常！");
+            }finally {
+
+                try {
+                    pw.flush();
+                    fw.flush();
+                    pw.close();
+                    fw.close();
+                    res = "log out successed";
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    System.out.println("在刷新/关闭txt文件出现异常！");
+                    res = "log out failed";
+                }
+
             }
+        }else {
+            System.out.println("日志关闭");
         }
         //传递给 Kafka，通过Post请求
-        String[] str ={String.valueOf(startTime),processID,sql,String.valueOf(costTime)};
-        System.out.println(str);
+        String[] str ={String.valueOf(start),processID,sql,String.valueOf(cost),agentargs[0],agentargs[1],agentargs[2],agentargs[3]};
+//        System.out.println(str);
         JSONObject jsonObject = strTojson(str);
         postToKafa(url,jsonObject);
-
         return res;
+
     }
     // add by hongkui here, 转换成json对象，进行传递
     public static JSONObject strTojson(String[] str){
@@ -137,7 +144,7 @@ public class MonitorLog {
 //            out.write(jsonObject.toString());
             out.write(String.valueOf(jsonObject));
 
-            System.out.println("after"+String.valueOf(jsonObject));
+//            System.out.println("after"+String.valueOf(jsonObject));
 
             out.flush();
             out.close();
@@ -199,11 +206,11 @@ public class MonitorLog {
     * 测试使用
     * */
     public static String tests(){
-        System.out.println("look here----------------:"+jdbcPremain.getAgentargs());
+//        System.out.println("look here----------------:"+jdbcPremain.getAgentargs());
         String[] agentargs = jdbcPremain.getAgentargs().split("&");
-        for(String s:agentargs){
-            System.out.println(s);
-        }
+//        for(String s:agentargs){
+//            System.out.println(s);
+//        }
         String startTime = Long.toString(start);
         String costTime = Long.toString(cost);
 
@@ -240,7 +247,7 @@ public class MonitorLog {
         }
         //传递给 Kafka，通过Post请求
         String[] str ={String.valueOf(start),processID,sql,String.valueOf(cost),agentargs[0],agentargs[1],agentargs[2],agentargs[3]};
-        System.out.println(str);
+//        System.out.println(str);
         JSONObject jsonObject = strTojson(str);
         postToKafa(url,jsonObject);
         return res;
@@ -295,7 +302,7 @@ public class MonitorLog {
 //        for(int i=0; i<res.length;i++){
 //            System.out.println(i+": "+res[i]);
 //        }
-         System.out.println(jdbcPremain.getAgentargs());
+//         System.out.println(jdbcPremain.getAgentargs());
 
     }
 

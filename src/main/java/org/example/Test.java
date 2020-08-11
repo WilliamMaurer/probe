@@ -14,6 +14,7 @@ public class Test implements ClassFileTransformer {
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer)  {
 
+//        stackTrace.printStackTrace3();
         ClassPool pool = ClassPool.getDefault();
 //        String newName = className.replace("/",".");
         /*
@@ -27,41 +28,6 @@ public class Test implements ClassFileTransformer {
 
         try {
             CtClass cl = pool.makeClass(new ByteArrayInputStream(classfileBuffer));
-//            System.out.println(cl.getName().equals("com.mysql.cj.jdbc.ClientPreparedStatement"));
-
-//            if(className.equals("java/sql/DriverManager")) {
-//
-//                CtMethod ct = cl.getDeclaredMethod("getConnection",
-//                        new CtClass[]{pool.get("java.lang.String"), pool.get("java.util.Properties"), pool.get("java.lang.Class")});
-//                ct.insertBefore("System.out.println($1);");
-//                ct.insertBefore("System.out.println($2);");
-//                ct.insertBefore("System.out.println($3);");
-//                ct.addLocalVariable("clazz", pool.get("java.lang.Class"));
-//                ct.addLocalVariable("info", pool.get("java.util.Properties"));
-//                ct.addLocalVariable("url", pool.get("java.lang.String"));
-//                ct.addLocalVariable("strings", pool.get("java.lang.String"));
-//                ct.insertBefore("url=$1;");
-//                ct.insertBefore("info=$2;");
-//                ct.insertBefore("clazz=$3;");
-//                ct.insertAfter("strings=url+\" \"+info.toString()+\" \"+clazz.toString();");
-//                ct.insertAfter("System.out.println(\"strings:\"+strings);");
-//                ct.addLocalVariable("id", pool.get("java.lang.String"));
-//                ct.insertAfter("id = org.example.ProcessId.getProcessId();");
-//                ct.insertAfter("id = \"\";");
-//                ct.addLocalVariable("start", CtClass.longType);
-//                ct.insertBefore("start = System.currentTimeMillis();");
-//                ct.addLocalVariable("cost", CtClass.longType);
-//                ct.insertAfter("cost = System.currentTimeMillis()-start;");
-//                ct.insertAfter("System.out.println(\"<------It is a PreparedStatement executeQuery. cost::------>\");");
-//                ct.insertAfter("System.out.println(\"processID:\"+id);");
-//                ct.insertAfter("System.out.println(\"cost:\"+cost);");
-//                ct.addLocalVariable("log_res", pool.get("java.lang.String"));
-//                ct.insertAfter("log_res = org.example.MonitorLog.writeLog(start,id,strings,cost);");
-////                    cl.writeFile();
-//                byte[] dmbytes = cl.toBytecode();
-//                return dmbytes;
-//            }
-
             if (( Arrays.toString(cl.getInterfaces()).contains("java.sql.Statement")||Arrays.toString(cl.getInterfaces()).contains("java.sql.Connection")
                     ||Arrays.toString(cl.getInterfaces()).contains("java.sql.PrepareStatement"))&& !cl.isInterface()){
                 /*
@@ -76,12 +42,11 @@ public class Test implements ClassFileTransformer {
                 if (curStatement.equals("PreparedStatement")){
 //                    通过PreparedStatement方式执行SQL的
                     captureSqlFromPreparedStatement(pool,cl);
-//                    CtClass esqlclazz = SqlExecuteTime(pool,cl);
-//                    byte[] epbytes = esqlclazz.toBytecode();
 
                 }else if(curStatement.equals("Statement")){
 //                    通过Statement方式执行SQL的
                     captureSqlFromStatement(pool,cl);
+
                     byte[] ddbytes =cl.toBytecode();
                     return ddbytes;
 
@@ -275,8 +240,6 @@ public class Test implements ClassFileTransformer {
         pm.insertAfter("org.example.MonitorLog.setProcessID(id);");
 
 
-//        SqlExecuteTime(pool,clazz);
-
 //        输出至日志文档
         pm.addLocalVariable("log_res",pool.get("java.lang.String"));
 //        pm.insertAfter("log_res = org.example.MonitorLog.tests();");
@@ -311,7 +274,6 @@ public class Test implements ClassFileTransformer {
         pm.insertAfter("System.out.println(\"cost:\"+cost);");
         pm.insertAfter("org.example.MonitorLog.setSql(sql);");
 
-//        SqlExecuteTime(pool,clazz);
 //        输出至日志文档
         
         pm.addLocalVariable("log_res",pool.get("java.lang.String"));
@@ -325,85 +287,85 @@ public class Test implements ClassFileTransformer {
     * */
     public static void captureSqlFromStatement(ClassPool pool,CtClass clazz) throws NotFoundException, CannotCompileException {
 //        System.out.println("这是个Statement对象。");
-        CtMethod em = clazz.getDeclaredMethod("executeQuery",new CtClass[]{pool.get("java.lang.String")});
+        try {
+            CtMethod em = clazz.getDeclaredMethod("executeQuery", new CtClass[]{pool.get("java.lang.String")});
 //        获取SQL语句
-        em.addLocalVariable("sql",pool.get("java.lang.String"));
-        em.insertBefore("sql = $1;");
+            em.addLocalVariable("sql", pool.get("java.lang.String"));
+            em.insertBefore("sql = $1;");
 
 
 //        获取进程ID
-        em.addLocalVariable("id",pool.get("java.lang.String"));
-        em.insertBefore("id = org.example.ProcessId.getProcessId();");
+            em.addLocalVariable("id", pool.get("java.lang.String"));
+            em.insertBefore("id = org.example.ProcessId.getProcessId();");
 
 
 //        获取SQL执行的开始时间
-        em.addLocalVariable("start",CtClass.longType);
-        em.insertBefore("start = System.currentTimeMillis();");
+            em.addLocalVariable("start", CtClass.longType);
+            em.insertBefore("start = System.currentTimeMillis();");
 
 
 //        获取SQL的运行时间
-        em.addLocalVariable("cost",CtClass.longType);
-        em.insertAfter("cost = System.currentTimeMillis()-start;");
+            em.addLocalVariable("cost", CtClass.longType);
+            em.insertAfter("cost = System.currentTimeMillis()-start;");
 
 
-        em.insertAfter("System.out.println(\"<------A Statement Object. This is execute() for SQL. Achieved by com/mysql/cj/jdbc/StatementImpl:------>\");");
-        em.insertAfter("System.out.println(\"start:\"+start);");
-        em.insertAfter("System.out.println(\"processID:\"+id);");
-        em.insertAfter("System.out.println(\"sql:\"+sql);");
-        em.insertAfter("System.out.println(\"cost:\"+cost);");
+            em.insertAfter("System.out.println(\"<------A Statement Object. This is execute() for SQL. Achieved by com/mysql/cj/jdbc/StatementImpl:------>\");");
+            em.insertAfter("System.out.println(\"start:\"+start);");
+            em.insertAfter("System.out.println(\"processID:\"+id);");
+            em.insertAfter("System.out.println(\"sql:\"+sql);");
+            em.insertAfter("System.out.println(\"cost:\"+cost);");
 
 //        输出至日志文档
-        em.insertAfter("org.example.MonitorLog.setSql(sql);");
-        em.insertAfter("org.example.MonitorLog.setCost(cost);");
-        em.insertAfter("org.example.MonitorLog.setStart(start);");
-        em.insertAfter("org.example.MonitorLog.setProcessID(id);");
+            em.insertAfter("org.example.MonitorLog.setSql(sql);");
+            em.insertAfter("org.example.MonitorLog.setCost(cost);");
+            em.insertAfter("org.example.MonitorLog.setStart(start);");
+            em.insertAfter("org.example.MonitorLog.setProcessID(id);");
 
-        em.addLocalVariable("log_res",pool.get("java.lang.String"));
+            em.addLocalVariable("log_res", pool.get("java.lang.String"));
 //        em.insertAfter("log_res = org.example.MonitorLog.writeLog(start,id,sql,cost);");
 
-        em.insertAfter("log_res = org.example.MonitorLog.tests();");
+            em.insertAfter("log_res = org.example.MonitorLog.tests();");
 //        return clazz;
-    }
-    public static void SqlExecuteTime(ClassPool pool,CtClass clazz) throws NotFoundException, CannotCompileException {
+        }catch (Exception e){
 
-        CtMethod closeStatementm = clazz.getDeclaredMethod("com.mysql.cj.jdbc.ClientPreparedStatement.executeQuery");
-//        获取SQL的运行时间
-        closeStatementm.addLocalVariable("end",CtClass.longType);
-        closeStatementm.insertBefore("end = System.currentTimeMillis();");
-        closeStatementm.insertBefore("System.out.println(\"<------This is execute() for end:------>\");");
-        closeStatementm.insertBefore("System.out.println(\"end:\"+end);");
+            e.printStackTrace();
+        }
+        //增删操作：
+        try {
+            CtMethod inserDelete = clazz.getDeclaredMethod("executeUpdate", new CtClass[]{pool.get("java.lang.String")});
+            inserDelete.addLocalVariable("id", pool.get("java.lang.String"));
+            inserDelete.insertBefore("id = org.example.ProcessId.getProcessId();");
 
-//        return cpsclazz;
+            inserDelete.addLocalVariable("sql", pool.get("java.lang.String"));
+            inserDelete.insertBefore("sql = $1;");
+
+            inserDelete.addLocalVariable("start", CtClass.longType);
+            inserDelete.insertBefore("start = System.currentTimeMillis();");
+
+
+            inserDelete.addLocalVariable("cost", CtClass.longType);
+            inserDelete.insertAfter("cost = System.currentTimeMillis()-start;");
+
+            inserDelete.insertAfter("System.out.println(\"<------A Statement executeUpdate(). Achieved by com/mysql/cj/jdbc/StatementImpl.------>\");");
+            inserDelete.insertAfter("System.out.println(\"start:\"+start);");
+            inserDelete.insertAfter("System.out.println(\"processID:\"+id);");
+            inserDelete.insertAfter("System.out.println(\"cost:\"+cost);");
+            inserDelete.insertAfter("System.out.println(\"sql:\"+sql);");
+
+            inserDelete.insertAfter("org.example.MonitorLog.setStart(start);");
+            inserDelete.insertAfter("org.example.MonitorLog.setCost(cost);");
+            inserDelete.insertAfter("org.example.MonitorLog.setProcessID(id);");
+            inserDelete.insertAfter("org.example.MonitorLog.setSql(sql);");
+
+            inserDelete.addLocalVariable("log_res", pool.get("java.lang.String"));
+//            inserDelete.insertAfter("log_res = org.example.MonitorLog.writeLog(start,id,sql,cost);");
+
+
+        inserDelete.insertAfter("log_res = org.example.MonitorLog.tests();");
+        }catch (Exception e){
+
+        }
     }
-//    public static void sqlExecute(ClassPool pool,CtClass clazz) throws NotFoundException, CannotCompileException {
-//
-//        CtMethod sqlem = clazz.getDeclaredMethod("execute");
-//
-////        获取SQL的运行时间
-//        sqlem.addLocalVariable("end",CtClass.longType);
-//        sqlem.insertAfter("end = System.currentTimeMillis();");
-//        sqlem.insertAfter("System.out.println(\"<------This is execute() for end:------>\");");
-//        sqlem.insertAfter("System.out.println(\"end:\"+end);");
-//
-//    }
-//    public static void sqlExecuteUpdate(ClassPool pool,CtClass clazz) throws NotFoundException, CannotCompileException {
-//
-//        CtMethod sqleum = clazz.getDeclaredMethod("executeUpdate");
-////        获取SQL的运行时间
-//        sqleum.addLocalVariable("end",CtClass.longType);
-//        sqleum.insertAfter("end = System.currentTimeMillis();");
-//        sqleum.insertAfter("System.out.println(\"<------This is executeUpdate() for end:------>\");");
-//        sqleum.insertAfter("System.out.println(\"end:\"+end);");
-//    }
-//    public static void sqlExecuteBatch(ClassPool pool,CtClass clazz) throws NotFoundException, CannotCompileException {
-//
-//        CtMethod sqlebm = clazz.getDeclaredMethod("executeBatch");
-////        获取SQL的运行时间
-//        sqlebm.addLocalVariable("end",CtClass.longType);
-//        sqlebm.insertAfter("end = System.currentTimeMillis();");
-//        sqlebm.insertAfter("System.out.println(\"<------This is executeBatch() for end:------>\");");
-//        sqlebm.insertAfter("System.out.println(\"end:\"+end);");
-//    }
 
     /*
     * 测试 hellw类 中的 add()方法
@@ -423,15 +385,17 @@ public class Test implements ClassFileTransformer {
     * 判断当前语句执行实例是 Statement 还是 PreparedStatement
     * */
 
-    public static String currentStatement(CtMethod[] ctMethods){
+    public static String currentStatement(CtMethod[] ctMethods) throws NotFoundException {
         boolean isStatement=false;
         boolean isPreparedStatement=false;
         String res = "";
         for(CtMethod cm:ctMethods){
-            if(cm.getName().contains("execute")){
+
+//            System.out.println(cm.getParameterTypes().length+"==="+cm.getName());
+            if(cm.getName().contains("execute")&&(cm.getParameterTypes().length==1)){
                 isStatement = true;
             }
-            if(cm.getName().contains("prepare")){
+            if (cm.getName().contains("prepare")&&(cm.getParameterTypes().length==0)){
                 isPreparedStatement = true;
             }
         }

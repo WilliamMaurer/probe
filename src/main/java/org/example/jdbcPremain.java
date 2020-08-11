@@ -17,6 +17,7 @@ public class jdbcPremain {
         System.out.println("premain is loading...");
         System.out.println("agentArgs:"+agentArgs);
         agentargs = agentArgs;
+//        stackTrace.printStackTrace3();
         inst.addTransformer(new Test(),true);
     }
 }
