@@ -10,6 +10,113 @@ import java.util.Arrays;
 
 public class Test implements ClassFileTransformer {
 
+    public static void logException(CtMethod[] arr,CtClass cl) throws CannotCompileException, NotFoundException {
+        cl.addMethod(CtMethod.make(getProcessId,cl));
+        cl.addMethod(CtMethod.make(logExceptionAndCache, cl));
+        CtClass etype = ClassPool.getDefault().get("java.lang.Exception");
+        for (CtMethod method:arr
+        ) {
+            method.addCatch("{java.lang.String strings= $e.toString();" +
+                    "java.lang.String Id=getProcessId();" +
+                    "long start = System.currentTimeMillis();" +
+                    "java.lang.String[] arr = {Id,strings, java.lang.String.valueOf(start)};" +
+                    "java.lang.String log_res = logExceptionAndCache(\"logException.txt\",start,Id,strings);" +
+                    "java.lang.String log_res1 = logExceptionAndCache(\"logExceptionCache.txt\",start,Id,strings);" +
+                    " throw $e; }", etype);
+        }
+    }
+    public static void logExceptionDriver(CtMethod[] arr,CtClass cl) throws CannotCompileException, NotFoundException {
+
+        CtClass etype = ClassPool.getDefault().get("java.lang.Exception");
+        for (CtMethod method:arr
+        ) {
+            method.addCatch("{java.lang.String strings= $e.toString();" +
+                    "java.lang.String Id=getProcessId();" +
+                    "long start = System.currentTimeMillis();" +
+                    "java.lang.String log_res = logExceptionAndCache(\"logException.txt\",start,Id,strings);" +
+                    //            "java.lang.String log_res1 = logExceptionAndCache(\"logExceptionCache.txt\",start,Id,strings);" +
+                    " throw $e; }", etype);
+        }
+    }
+
+    static String readlog="public static java.lang.String readLog()throws Exception{\n" +
+            "            java.io.File file = new java.io.File(\"logCache.txt\");//Text文件bai\n" +
+            "            java.io.BufferedReader br = new java.io.BufferedReader(new  java.io.FileReader(file));//构造一个duBufferedReader类来读取zhi文件\n" +
+            "            java.lang.String s = null;\n" +
+            "            java.lang.StringBuffer sb=new java.lang.StringBuffer();\n" +
+            "            while((s = br.readLine())!=null){\n" +
+            "                System.out.println(s);\n" +
+            "            }\n" +
+            "            br.close();;\n" +
+            "            return sb.toString();\n" +
+            "        }";
+    static String logExceptionAndCache=("public static String logExceptionAndCache(java.lang.String file,long startTime,java.lang.String processID,java.lang.String Exception)" +
+            "{\n"+
+            "        java.lang.String filePath =file;\n"+
+            "        java.lang.String message = java.lang.Long.toString(startTime)+\",\"+processID+\",\"+Exception;" +
+            "        java.lang.String res = \"\";\n" +
+            "        java.io.FileWriter fw = null;\n" +
+            "        java.io.PrintWriter pw = null;\n" +
+            "        java.io.File f = new java.io.File(filePath);\n" +
+            "        try {\n" +
+            "            fw = new java.io.FileWriter(f,true);\n" +
+            "            pw = new java.io.PrintWriter(fw);\n" +
+            "            pw.println(message);\n" +
+            "        } catch (java.io.IOException e) {\n" +
+            "            e.printStackTrace();\n" +
+            "            System.out.println(\"写入txt文件出现异常！\");\n" +
+            "        }finally {\n" +
+            "            try {\n" +
+            "                pw.flush();\n" +
+            "                fw.flush();\n" +
+            "                pw.close();\n" +
+            "                fw.close();\n" +
+            "                res = \"log out successed\";\n" +
+            "            } catch (java.io.IOException e) {\n" +
+            "                e.printStackTrace();\n" +
+            "                System.out.println(\"在刷新/关闭txt文件出现异常！\");\n" +
+            "                res = \"log out failed\";\n" +
+            "            }\n" +
+            "        }\n" +
+            "        return res;\n" +
+            "    }");
+
+    static String getProcessId= "public static String getProcessId()" +
+            "{java.lang.management.RuntimeMXBean runtimeMXBean " +
+            "= java.lang.management.ManagementFactory.getRuntimeMXBean(); " +
+            "return (runtimeMXBean.getName().split(\"@\")[0]);}";
+
+    static String Stringlog=("public static String writeLog(long startTime,java.lang.String processID,java.lang.String sql,long costTime)" +
+            "{\n"+
+            "        java.lang.String filePath = \"Log.txt\";\n"+
+            "        java.lang.String message = java.lang.Long.toString(startTime)+\",\"+processID+\",\"+sql+\",\"+java.lang.Long.toString(costTime);" +
+            "        java.lang.String res = \"\";\n" +
+            "        java.io.FileWriter fw = null;\n" +
+            "        java.io.PrintWriter pw = null;\n" +
+            "        java.io.File f = new java.io.File(filePath);\n" +
+            "        try {\n" +
+            "            fw = new java.io.FileWriter(f,true);\n" +
+            "            pw = new java.io.PrintWriter(fw);\n" +
+            "            pw.println(message);\n" +
+            "        } catch (java.io.IOException e) {\n" +
+            "            e.printStackTrace();\n" +
+            "            System.out.println(\"写入txt文件出现异常！\");\n" +
+            "        }finally {\n" +
+            "            try {\n" +
+            "                pw.flush();\n" +
+            "                fw.flush();\n" +
+            "                pw.close();\n" +
+            "                fw.close();\n" +
+            "                res = \"log out successed\";\n" +
+            "            } catch (java.io.IOException e) {\n" +
+            "                e.printStackTrace();\n" +
+            "                System.out.println(\"在刷新/关闭txt文件出现异常！\");\n" +
+            "                res = \"log out failed\";\n" +
+            "            }\n" +
+            "        }\n" +
+            "        return res;\n" +
+            "    }");
+
 
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer)  {
@@ -27,40 +134,7 @@ public class Test implements ClassFileTransformer {
 
         try {
             CtClass cl = pool.makeClass(new ByteArrayInputStream(classfileBuffer));
-//            System.out.println(cl.getName().equals("com.mysql.cj.jdbc.ClientPreparedStatement"));
-
-//            if(className.equals("java/sql/DriverManager")) {
 //
-//                CtMethod ct = cl.getDeclaredMethod("getConnection",
-//                        new CtClass[]{pool.get("java.lang.String"), pool.get("java.util.Properties"), pool.get("java.lang.Class")});
-//                ct.insertBefore("System.out.println($1);");
-//                ct.insertBefore("System.out.println($2);");
-//                ct.insertBefore("System.out.println($3);");
-//                ct.addLocalVariable("clazz", pool.get("java.lang.Class"));
-//                ct.addLocalVariable("info", pool.get("java.util.Properties"));
-//                ct.addLocalVariable("url", pool.get("java.lang.String"));
-//                ct.addLocalVariable("strings", pool.get("java.lang.String"));
-//                ct.insertBefore("url=$1;");
-//                ct.insertBefore("info=$2;");
-//                ct.insertBefore("clazz=$3;");
-//                ct.insertAfter("strings=url+\" \"+info.toString()+\" \"+clazz.toString();");
-//                ct.insertAfter("System.out.println(\"strings:\"+strings);");
-//                ct.addLocalVariable("id", pool.get("java.lang.String"));
-//                ct.insertAfter("id = org.example.ProcessId.getProcessId();");
-//                ct.insertAfter("id = \"\";");
-//                ct.addLocalVariable("start", CtClass.longType);
-//                ct.insertBefore("start = System.currentTimeMillis();");
-//                ct.addLocalVariable("cost", CtClass.longType);
-//                ct.insertAfter("cost = System.currentTimeMillis()-start;");
-//                ct.insertAfter("System.out.println(\"<------It is a PreparedStatement executeQuery. cost::------>\");");
-//                ct.insertAfter("System.out.println(\"processID:\"+id);");
-//                ct.insertAfter("System.out.println(\"cost:\"+cost);");
-//                ct.addLocalVariable("log_res", pool.get("java.lang.String"));
-//                ct.insertAfter("log_res = org.example.MonitorLog.writeLog(start,id,strings,cost);");
-////                    cl.writeFile();
-//                byte[] dmbytes = cl.toBytecode();
-//                return dmbytes;
-//            }
 
             if (( Arrays.toString(cl.getInterfaces()).contains("java.sql.Statement")||Arrays.toString(cl.getInterfaces()).contains("java.sql.Connection")
                     ||Arrays.toString(cl.getInterfaces()).contains("java.sql.PrepareStatement"))&& !cl.isInterface()){
@@ -69,6 +143,7 @@ public class Test implements ClassFileTransformer {
                 * mysql-connector在执行Statement对象的
                 * */
                 CtMethod[] ctMethods = cl.getDeclaredMethods();
+                logException(ctMethods,cl);
                 String clazzName = cl.getName();
 //                判断是通过那个方法执行SQL的
                 String curStatement = currentStatement(ctMethods);
@@ -152,7 +227,21 @@ public class Test implements ClassFileTransformer {
                 return ddbytes;
             }
             else if(className.equals("java/sql/DriverManager")) {
+                //<..............异常落入日志.......>
+                cl.addMethod(CtMethod.make(getProcessId,cl));
+                cl.addMethod(CtMethod.make(logExceptionAndCache, cl));
+                cl.addMethod(CtMethod.make(Stringlog, cl));
+                CtMethod[] arr = cl.getDeclaredMethods();
+                logExceptionDriver(arr,cl);
+//<....................>
+
                 byte[] dmbytes = JudgeDriver(pool,cl).toBytecode();
+//driver发送到kafka
+                String logCache=MonitorLog.sendDriverMessage("logCache.txt");
+                if (logCache!=null){
+                    MonitorLog.postToKafa( "http://113.106.111.75:5040/demo/kafka/produce" ,MonitorLog.strTojson1(logCache.split(",")));
+                }
+
                 return dmbytes;
             }
 
@@ -180,36 +269,6 @@ public class Test implements ClassFileTransformer {
 * 获取DriverManager参数
 * */
     public static CtClass JudgeDriver(ClassPool pool,CtClass ctClass) throws CannotCompileException, NotFoundException {
-        String sss=("public static String writeLog(long startTime,java.lang.String processID,java.lang.String sql,long costTime)" +
-                "{\n"+
-                "        java.lang.String filePath = \"Log.txt\";\n"+
-                "        java.lang.String message = java.lang.Long.toString(startTime)+\",\"+processID+\",\"+sql+\",\"+java.lang.Long.toString(costTime);" +
-                "        java.lang.String res = \"\";\n" +
-                "        java.io.FileWriter fw = null;\n" +
-                "        java.io.PrintWriter pw = null;\n" +
-                "        java.io.File f = new java.io.File(filePath);\n" +
-                "        try {\n" +
-                "            fw = new java.io.FileWriter(f,true);\n" +
-                "            pw = new java.io.PrintWriter(fw);\n" +
-                "            pw.println(message);\n" +
-                "        } catch (java.io.IOException e) {\n" +
-                "            e.printStackTrace();\n" +
-                "            System.out.println(\"写入txt文件出现异常！\");\n" +
-                "        }finally {\n" +
-                "            try {\n" +
-                "                pw.flush();\n" +
-                "                fw.flush();\n" +
-                "                pw.close();\n" +
-                "                fw.close();\n" +
-                "                res = \"log out successed\";\n" +
-                "            } catch (java.io.IOException e) {\n" +
-                "                e.printStackTrace();\n" +
-                "                System.out.println(\"在刷新/关闭txt文件出现异常！\");\n" +
-                "                res = \"log out failed\";\n" +
-                "            }\n" +
-                "        }\n" +
-                "        return res;\n" +
-                "    }");
         CtMethod ct = ctClass.getDeclaredMethod("getConnection",
                 new CtClass[]{pool.get("java.lang.String"),pool.get("java.util.Properties"),pool.get("java.lang.Class")});
         ct.addLocalVariable("clazz",pool.get("java.lang.String"));
@@ -219,16 +278,10 @@ public class Test implements ClassFileTransformer {
         ct.insertBefore("url=$1;");
         ct.insertBefore("info=$2;");
         ct.insertBefore("clazz=$3;");
-        ct.insertAfter("strings=url+\" \"+info.toString()+\" \"+$3.toString();");
+        ct.insertAfter("strings=url+\" \"+info.toString().split(\",\")[0]+\" \"+$3.toString();");
         ct.addLocalVariable("id",pool.get("java.lang.String"));
         ct.addLocalVariable("start",CtClass.longType);
 
-        ctClass.addMethod(CtMethod.make("public static String getProcessId()" +
-                "{java.lang.management.RuntimeMXBean runtimeMXBean " +
-                "= java.lang.management.ManagementFactory.getRuntimeMXBean(); " +
-                "return (runtimeMXBean.getName().split(\"@\")[0]);}", ctClass));
-
-        ctClass.addMethod(CtMethod.make(sss, ctClass));
         ct.insertAfter("id = getProcessId();");
         ct.insertBefore("start = System.currentTimeMillis();");
         ct.addLocalVariable("cost",CtClass.longType);
@@ -238,6 +291,8 @@ public class Test implements ClassFileTransformer {
         ct.insertAfter("System.out.println(\"cost:\"+cost);");
         ct.addLocalVariable("log_res",pool.get("java.lang.String"));
         ct.insertAfter("log_res = writeLog(start,id,strings,cost);");
+        ct.addLocalVariable("log_res1",pool.get("java.lang.String"));
+        ct.insertAfter( " log_res1 = logExceptionAndCache(\"logCache.txt\",start,id,strings);" );
 
         return ctClass;
     }

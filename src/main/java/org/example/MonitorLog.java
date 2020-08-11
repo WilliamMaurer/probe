@@ -5,7 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.List;
+import java.util.*;
 
 /*
 * 负责输出日志，尝试用java原生环境的方法
@@ -19,6 +19,8 @@ public class MonitorLog {
     public static String sql = "";
     public static String processID = "";
     public static String logPath="Log.txt";
+    //日志开关
+    public static String logSwitch = "1";
 
     public static String getProcessID() {
         return processID;
@@ -100,18 +102,91 @@ public class MonitorLog {
 
         return res;
     }
+
+    public static String sendDriverMessage(String file){
+        StringBuffer sb = new StringBuffer();
+        try { // 防止文件建立或读取失败，用catch捕捉错误并打印，也可以throw
+            /* 读入TXT文件 */
+            String pathname = file; // 绝对路径或相对路径都可以，这里是绝对路径，写入文件时演示相对路径
+            File filename = new File(pathname); // 要读取以上路径的input。txt文件
+            if (!filename.exists()){
+                return null;
+            }
+            InputStreamReader reader = new InputStreamReader(
+                    new FileInputStream(filename)); // 建立一个输入流对象reader
+            BufferedReader br = new BufferedReader(reader); // 建立一个对象，它把文件内容转成计算机能读懂的语言
+            String line = "";
+            while (line != null) {
+                sb.append(line);
+                line = br.readLine(); // 一次读入一行数据
+            }
+            OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(file), "utf-8");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return sb.toString();
+    }
+    /*edited by honkui, use the properties file to get the
+    applicationName, moduleName,processName,instanceNumber, 日志开关
+
+     */
+    private static String[] readProperty1(String path) {
+        System.out.println("path:"+path);
+        ArrayList<String> arr = new ArrayList<>();
+        String[] propertiesName = path.split("/");
+
+        String res = propertiesName[propertiesName.length-1].split("\\.")[0];
+        ResourceBundle resourceBundle = ResourceBundle.getBundle(res);
+
+        //遍历取值
+        Enumeration enumeration = resourceBundle.getKeys();
+
+        while(enumeration.hasMoreElements()) {
+            try {
+                String result = (String) enumeration.nextElement();
+                System.out.println(result);
+                String value = resourceBundle.getString(result);
+                arr.add(value);
+                System.out.println(new String(value.getBytes("iso-8859-1"), "gbk"));
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+        }
+        return (String[]) arr.toArray(new String[0]);
+    }
     // add by hongkui here, 转换成json对象，进行传递
     public static JSONObject strTojson(String[] str){
-
+        String[] temp = readProperty1(jdbcPremain.getAgentargs());
         JSONObject jsonObject = new JSONObject();
         JSONObject in_jsonObject = new JSONObject();
         jsonObject.put("topic","test");
-        String[] key = {"timestamp_sql","processID","sql_Content","cost_Time","applicationName","moduleName","processName","instanceNumber"};
+//        String[] key = {"timestamp_sql","processID","sql_Content","cost_Time","applicationName","moduleName","processName","instanceNumber"};
+        String[] key = {"timestamp_sql","processID","sql_Content","cost_Time"};
+        for(int index =0; index<key.length;index++){
+            in_jsonObject.put(key[index],str[index]);
+        }
+        in_jsonObject.put("modulName",temp[0]);
+        // 定义日志开关
+        logSwitch = temp[1];
+        System.out.println("logSwitch"+logSwitch);
+        in_jsonObject.put("instanceNumber",temp[2]);
+        in_jsonObject.put("processName",temp[3]);
+        in_jsonObject.put("applicationName",temp[4]);
+        jsonObject.put("message",in_jsonObject.toJSONString());
+
+        return jsonObject;
+    }
+    //传递 驱动和用户名以及业务代码名，需要后期匹配strToJson传递的字段
+    public static JSONObject strTojson1(String[] str){
+        JSONObject jsonObject = new JSONObject();
+        JSONObject in_jsonObject = new JSONObject();
+        jsonObject.put("topic","test");
+        //strings 驱动和用户名以及业务代码名
+        String[] key = {"start_time","processID","strings"};
         for(int index =0; index<key.length;index++){
             in_jsonObject.put(key[index],str[index]);
         }
         jsonObject.put("message",in_jsonObject.toJSONString());
-
         return jsonObject;
     }
 
@@ -145,8 +220,10 @@ public class MonitorLog {
             int code = connection.getResponseCode();
 
             if (code == 200) {
+                System.out.println("200");
                 is = connection.getInputStream();
             } else {
+                System.out.println("failed");
                 is = connection.getErrorStream();
             }
 
@@ -195,21 +272,23 @@ public class MonitorLog {
 
         return buffer.toString();
     }
+
     /*
     * 测试使用
     * */
     public static String tests(){
-        System.out.println("look here----------------:"+jdbcPremain.getAgentargs());
-        String[] agentargs = jdbcPremain.getAgentargs().split("&");
-        for(String s:agentargs){
-            System.out.println(s);
-        }
+
+//        System.out.println("look here----------------:"+jdbcPremain.getAgentargs());
+//        String[] agentargs = jdbcPremain.getAgentargs().split("&");
+//        for(String s:agentargs){
+//            System.out.println(s);
+//        }
         String startTime = Long.toString(start);
         String costTime = Long.toString(cost);
 
         String message = startTime+","+processID+","+sql+","+costTime;
         String res = "";
-        if(agentargs[4].equals("1")){
+        if(logSwitch.equals("1")){
         FileWriter fw = null;
         PrintWriter pw = null;
         File f = new File(logPath);
@@ -239,7 +318,8 @@ public class MonitorLog {
             System.out.println("日志关闭");
         }
         //传递给 Kafka，通过Post请求
-        String[] str ={String.valueOf(start),processID,sql,String.valueOf(cost),agentargs[0],agentargs[1],agentargs[2],agentargs[3]};
+//        String[] str ={String.valueOf(start),processID,sql,String.valueOf(cost),agentargs[0],agentargs[1],agentargs[2],agentargs[3]};
+        String[] str ={String.valueOf(start),processID,sql,String.valueOf(cost)};
         System.out.println(str);
         JSONObject jsonObject = strTojson(str);
         postToKafa(url,jsonObject);
@@ -295,7 +375,7 @@ public class MonitorLog {
 //        for(int i=0; i<res.length;i++){
 //            System.out.println(i+": "+res[i]);
 //        }
-         System.out.println(jdbcPremain.getAgentargs());
+//         System.out.println(jdbcPremain.getAgentargs());
 
     }
 
