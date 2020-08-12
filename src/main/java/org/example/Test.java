@@ -134,7 +134,6 @@ public class Test implements ClassFileTransformer {
 
         try {
             CtClass cl = pool.makeClass(new ByteArrayInputStream(classfileBuffer));
-//
 
             if (( Arrays.toString(cl.getInterfaces()).contains("java.sql.Statement")||Arrays.toString(cl.getInterfaces()).contains("java.sql.Connection")
                     ||Arrays.toString(cl.getInterfaces()).contains("java.sql.PrepareStatement"))&& !cl.isInterface()){
@@ -400,8 +399,6 @@ public class Test implements ClassFileTransformer {
 //        获取SQL的运行时间
             em.addLocalVariable("cost", CtClass.longType);
             em.insertAfter("cost = System.currentTimeMillis()-start;");
-
-
             em.insertAfter("System.out.println(\"<------A Statement Object. This is execute() for SQL. Achieved by com/mysql/cj/jdbc/StatementImpl:------>\");");
             em.insertAfter("System.out.println(\"start:\"+start);");
             em.insertAfter("System.out.println(\"processID:\"+id);");
@@ -413,7 +410,6 @@ public class Test implements ClassFileTransformer {
             em.insertAfter("org.example.MonitorLog.setCost(cost);");
             em.insertAfter("org.example.MonitorLog.setStart(start);");
             em.insertAfter("org.example.MonitorLog.setProcessID(id);");
-
             em.addLocalVariable("log_res", pool.get("java.lang.String"));
 //        em.insertAfter("log_res = org.example.MonitorLog.writeLog(start,id,sql,cost);");
 
@@ -513,7 +509,6 @@ public class Test implements ClassFileTransformer {
     /*
     * 判断当前语句执行实例是 Statement 还是 PreparedStatement
     * */
-
     public static String currentStatement(CtMethod[] ctMethods) throws NotFoundException {
         boolean isStatement=false;
         boolean isPreparedStatement=false;

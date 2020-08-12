@@ -160,7 +160,6 @@ public class MonitorLog {
         JSONObject jsonObject = new JSONObject();
         JSONObject in_jsonObject = new JSONObject();
         jsonObject.put("topic","test");
-//        String[] key = {"timestamp_sql","processID","sql_Content","cost_Time","applicationName","moduleName","processName","instanceNumber"};
         String[] key = {"timestamp_sql","processID","sql_Content","cost_Time"};
         for(int index =0; index<key.length;index++){
             in_jsonObject.put(key[index],str[index]);
@@ -277,12 +276,6 @@ public class MonitorLog {
     * 测试使用
     * */
     public static String tests(){
-
-//        System.out.println("look here----------------:"+jdbcPremain.getAgentargs());
-//        String[] agentargs = jdbcPremain.getAgentargs().split("&");
-//        for(String s:agentargs){
-//            System.out.println(s);
-//        }
         String startTime = Long.toString(start);
         String costTime = Long.toString(cost);
 
@@ -318,7 +311,6 @@ public class MonitorLog {
             System.out.println("日志关闭");
         }
         //传递给 Kafka，通过Post请求
-//        String[] str ={String.valueOf(start),processID,sql,String.valueOf(cost),agentargs[0],agentargs[1],agentargs[2],agentargs[3]};
         String[] str ={String.valueOf(start),processID,sql,String.valueOf(cost)};
         System.out.println(str);
         JSONObject jsonObject = strTojson(str);
@@ -375,8 +367,9 @@ public class MonitorLog {
 //        for(int i=0; i<res.length;i++){
 //            System.out.println(i+": "+res[i]);
 //        }
-//         System.out.println(jdbcPremain.getAgentargs());
+         System.out.println(jdbcPremain.getAgentargs());
 
     }
+
 
 }
